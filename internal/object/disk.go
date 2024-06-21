@@ -1,4 +1,4 @@
-package main
+package object
 
 import (
 	"io"
@@ -6,15 +6,22 @@ import (
 	"path/filepath"
 )
 
-type DiskObjectStore struct {
+type DiskStore struct {
 	root string
 }
 
-func (d *DiskObjectStore) Open(hash string) (io.ReadCloser, error) {
+func NewDiskStore(root string) (*DiskStore, error) {
+	if err := os.MkdirAll(root, 0755); err != nil {
+		return nil, err
+	}
+	return &DiskStore{root: root}, nil
+}
+
+func (d *DiskStore) Open(hash string) (io.ReadCloser, error) {
 	return os.Open(filepath.Join(d.root, hash))
 }
 
-func (d *DiskObjectStore) Store(hash string, r io.Reader) (int64, error) {
+func (d *DiskStore) Store(hash string, r io.Reader) (int64, error) {
 	f, err := os.Create(filepath.Join(d.root, hash))
 	if err != nil {
 		return 0, err
@@ -23,7 +30,7 @@ func (d *DiskObjectStore) Store(hash string, r io.Reader) (int64, error) {
 	return io.Copy(f, r)
 }
 
-func (d *DiskObjectStore) Exists(hash string) (bool, error) {
+func (d *DiskStore) Exists(hash string) (bool, error) {
 	_, err := os.Stat(filepath.Join(d.root, hash))
 	if err != nil {
 		if os.IsNotExist(err) {

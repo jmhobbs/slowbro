@@ -1,4 +1,4 @@
-package main
+package metadata
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type MetadataSqliteStore struct {
+type SqliteStore struct {
 	db *sql.DB
 }
 
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS metadata (
 ) WITHOUT ROWID;
 `
 
-func NewMetadataSqliteStore(path string) (*MetadataSqliteStore, error) {
+func NewSqliteStore(path string) (*SqliteStore, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -29,25 +29,10 @@ func NewMetadataSqliteStore(path string) (*MetadataSqliteStore, error) {
 		return nil, err
 	}
 
-	return &MetadataSqliteStore{db: db}, nil
+	return &SqliteStore{db: db}, nil
 }
 
-func (m *MetadataSqliteStore) Exists(hash string) (bool, error) {
-	a, err := m.Get(hash)
-	if err != nil {
-		return false, err
-	}
-	return a != nil, nil
-}
-
-type Artifact struct {
-	Hash     string
-	Tag      string
-	Duration int64
-	Size     int64
-}
-
-func (m *MetadataSqliteStore) Get(hash string) (*Artifact, error) {
+func (m *SqliteStore) Get(hash string) (*Artifact, error) {
 	var tag string
 	var duration int64
 	var size int64
@@ -66,7 +51,7 @@ func (m *MetadataSqliteStore) Get(hash string) (*Artifact, error) {
 	}, nil
 }
 
-func (m *MetadataSqliteStore) Store(hash, tag string, duration, size int64) error {
+func (m *SqliteStore) Store(hash, tag string, duration, size int64) error {
 	_, err := m.db.Exec("INSERT INTO metadata (hash, tag, duration, size) VALUES (?, ?, ?, ?)", hash, tag, duration, size)
 	return err
 }
